@@ -29,7 +29,7 @@ public class ExcelUtils {
         for (Cell cell : row) {
             int colIdx = cell.getColumnIndex();
             String value = formatter.formatCellValue(cell, evaluator);
-            colHeaders.put(colIdx, value);
+            colHeaders.put(colIdx, value.replaceAll("\\s", ""));
         }
 
         // collecting the content rows

@@ -15,6 +15,6 @@ public class User {
     @ExcelColumn(name = "dob")
     private LocalDateTime dob;
 
-    @ExcelColumn(name = "phone number", numberFormat = "0")
+    @ExcelColumn(name = "phonenumber", numberFormat = "0")
     private Integer phoneNumber;
 }
