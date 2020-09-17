@@ -86,7 +86,7 @@ public class ExcelUtils {
                             Instant instant = localDateTime.toInstant(ZoneOffset.UTC);
                             f.set(bean, Date.from(instant));
                         } else if (f.getType() == BigDecimal.class) {
-                            f.set(bean, new BigDecimal(cellValue));
+                            f.set(bean, new BigDecimal(num));
                         } else if (f.getType() == Timestamp.class) {
                             f.set(bean, Timestamp.valueOf(localDateTime));
                         } else { // this is for all other; Integer, Boolean, ...
