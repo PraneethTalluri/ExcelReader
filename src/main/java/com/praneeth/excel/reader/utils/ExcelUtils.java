@@ -7,11 +7,11 @@ import org.springframework.stereotype.Component;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.time.ZoneOffset;
+import java.util.*;
 
 @Component
 public class ExcelUtils {
@@ -35,7 +35,7 @@ public class ExcelUtils {
         // collecting the content rows
         List<T> result = new ArrayList<T>();
         String cellValue = "";
-        LocalDateTime date = null;
+        LocalDateTime localDateTime = null;
         Double num = null;
         for (int r = headerRowNum + 1; r <= sheet.getLastRowNum(); r++) {
             row = sheet.getRow(r);
@@ -48,11 +48,11 @@ public class ExcelUtils {
                 if (cell == null) cell = row.createCell(colIdx);
                 cellValue = formatter.formatCellValue(cell, evaluator); // string values and formatted numbers
                 // make some differences for numeric or formula content
-                date = null;
+                localDateTime = null;
                 num = null;
                 if (cell.getCellType() == CellType.NUMERIC) {
                     if (DateUtil.isCellDateFormatted(cell)) { // date
-                        date = cell.getLocalDateTimeCellValue();
+                        localDateTime = cell.getLocalDateTimeCellValue();
                     } else { // other numbers
                         num = cell.getNumericCellValue();
                     }
@@ -60,7 +60,7 @@ public class ExcelUtils {
                     // if formula evaluates to numeric
                     if (evaluator.evaluateFormulaCell(cell) == CellType.NUMERIC) {
                         if (DateUtil.isCellDateFormatted(cell)) { // date
-                            date = cell.getLocalDateTimeCellValue();
+                            localDateTime = cell.getLocalDateTimeCellValue();
                         } else { // other numbers
                             num = cell.getNumericCellValue();
                         }
@@ -80,7 +80,12 @@ public class ExcelUtils {
                         } else if (f.getType() == Double.class) {
                             f.set(bean, num);
                         } else if (f.getType() == LocalDateTime.class) {
-                            f.set(bean, date);
+                            f.set(bean, localDateTime);
+                        } else if (f.getType() == Date.class) {
+                            Instant instant = localDateTime.toInstant(ZoneOffset.UTC);
+                            f.set(bean, Date.from(instant));
+                        } else if (f.getType() == BigDecimal.class) {
+                            f.set(bean, new BigDecimal(cellValue));
                         } else { // this is for all other; Integer, Boolean, ...
                             if (!"".equals(cellValue)) {
                                 Method valueOf = f.getType().getDeclaredMethod("valueOf", String.class);
