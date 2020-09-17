@@ -6,6 +6,7 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,7 +20,7 @@ public class UploadService {
     @Autowired
     private ExcelUtils excelUtils;
 
-//    static String SHEET = "Sheet1";
+    static String SHEET = "Sheet1";
 
 //    public List<User> excelToUser(InputStream is) {
 //        try {
@@ -79,11 +80,11 @@ public class UploadService {
 //        }
 //    }
 
-    public List<User> excelSheetToUser(InputStream is) throws Exception {
-        Workbook workbook = WorkbookFactory.create(is);
+    public <T> List<T> excelToPojo(MultipartFile multipartFile, Class<T> beanClass) throws Exception {
+        Workbook workbook = WorkbookFactory.create(multipartFile.getInputStream());
         Sheet sheet = workbook.getSheetAt(0);
-        List<User> users = excelUtils.excelSheetToPOJO(sheet, User.class);
-        return users;
+        List<T> list = excelUtils.excelSheetToPOJO(sheet, beanClass);
+        return list;
     }
 }
 

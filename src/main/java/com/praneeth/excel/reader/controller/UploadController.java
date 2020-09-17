@@ -29,7 +29,7 @@ public class UploadController {
 
         if (!TYPE.equals(excelFile.getContentType())) {
             try {
-                List<User> users = uploadService.excelSheetToUser(excelFile.getInputStream());
+                List<User> users = uploadService.excelToPojo(excelFile, User.class);
 
                 message = "Uploaded the file successfully: " + excelFile.getOriginalFilename();
                 return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(message, users));
