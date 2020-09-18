@@ -74,7 +74,8 @@ public class ExcelUtils {
                         continue;
                     }
                     ExcelColumn ec = f.getAnnotation(ExcelColumn.class);
-                    if (entry.getValue().equals(ec.name())) {
+//                    if (entry.getValue().equals(ec.name())) {
+                    if (entry.getValue().contains(ec.name())) {
                         f.setAccessible(true);
                         if (f.getType() == String.class) {
                             f.set(bean, cellValue);
