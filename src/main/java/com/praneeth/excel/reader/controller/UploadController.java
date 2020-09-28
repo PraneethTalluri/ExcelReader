@@ -3,6 +3,7 @@ package com.praneeth.excel.reader.controller;
 import com.praneeth.excel.reader.dto.ResponseMessage;
 import com.praneeth.excel.reader.dto.User;
 import com.praneeth.excel.reader.service.UploadService;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,8 +13,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.ArrayList;
 import java.util.List;
 
+@Slf4j
 @RestController
 @RequestMapping("/v1")
 public class UploadController {
@@ -29,7 +32,9 @@ public class UploadController {
 
         if (!TYPE.equals(excelFile.getContentType())) {
             try {
-                List<User> users = uploadService.excelToPojo(excelFile, User.class);
+                List<String> errors = new ArrayList<>();
+                List<User> users = uploadService.excelToPojo(excelFile, User.class, errors);
+                log.error("Errors:" + errors.toString());
 
                 message = "Uploaded the file successfully: " + excelFile.getOriginalFilename();
                 return ResponseEntity.status(HttpStatus.OK).body(new ResponseMessage(message, users));

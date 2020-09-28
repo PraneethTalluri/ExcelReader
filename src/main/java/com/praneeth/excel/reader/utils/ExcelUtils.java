@@ -17,7 +17,7 @@ import java.util.*;
 @Component
 public class ExcelUtils {
 
-    public <T> List<T> excelSheetToPOJO(Sheet sheet, Class<T> beanClass) throws Exception {
+    public <T> List<T> excelSheetToPOJO(Sheet sheet, Class<T> beanClass, List<String> errors) throws Exception {
 
         DataFormatter formatter = new DataFormatter(java.util.Locale.US);
         FormulaEvaluator evaluator = sheet.getWorkbook().getCreationHelper().createFormulaEvaluator();
@@ -77,24 +77,28 @@ public class ExcelUtils {
 //                    if (entry.getValue().equals(ec.name())) {
                     if (entry.getValue().contains(ec.name())) {
                         f.setAccessible(true);
-                        if (f.getType() == String.class) {
-                            f.set(bean, cellValue);
-                        } else if (f.getType() == Double.class) {
-                            f.set(bean, num);
-                        } else if (f.getType() == LocalDateTime.class) {
-                            f.set(bean, localDateTime);
-                        } else if (f.getType() == Date.class) {
-                            Instant instant = localDateTime.toInstant(ZoneOffset.UTC);
-                            f.set(bean, Date.from(instant));
-                        } else if (f.getType() == BigDecimal.class) {
-                            f.set(bean, new BigDecimal(num));
-                        } else if (f.getType() == Timestamp.class) {
-                            f.set(bean, Timestamp.valueOf(localDateTime));
-                        } else { // this is for all other; Integer, Boolean, ...
-                            if (!"".equals(cellValue)) {
-                                Method valueOf = f.getType().getDeclaredMethod("valueOf", String.class);
-                                f.set(bean, valueOf.invoke(f.getType(), cellValue));
+                        try {
+                            if (f.getType() == String.class) {
+                                f.set(bean, cellValue);
+                            } else if (f.getType() == Double.class && num != null) {
+                                f.set(bean, num);
+                            } else if (f.getType() == LocalDateTime.class && localDateTime != null) {
+                                f.set(bean, localDateTime);
+                            } else if (f.getType() == Date.class && localDateTime != null) {
+                                Instant instant = localDateTime.toInstant(ZoneOffset.UTC);
+                                f.set(bean, Date.from(instant));
+                            } else if (f.getType() == BigDecimal.class && num != null) {
+                                f.set(bean, new BigDecimal(num));
+                            } else if (f.getType() == Timestamp.class && localDateTime != null) {
+                                f.set(bean, Timestamp.valueOf(localDateTime));
+                            } else { // this is for all other; Integer, Boolean, ...
+                                if (!"".equals(cellValue)) {
+                                    Method valueOf = f.getType().getDeclaredMethod("valueOf", String.class);
+                                    f.set(bean, valueOf.invoke(f.getType(), cellValue));
+                                }
                             }
+                        } catch (Exception e){
+                            errors.add("Failed to convert " + cellValue + " at row number: " + r + " and column number: " + colIdx);
                         }
                     }
                 }

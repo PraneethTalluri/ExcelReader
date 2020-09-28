@@ -80,10 +80,10 @@ public class UploadService {
 //        }
 //    }
 
-    public <T> List<T> excelToPojo(MultipartFile multipartFile, Class<T> beanClass) throws Exception {
+    public <T> List<T> excelToPojo(MultipartFile multipartFile, Class<T> beanClass, List<String> errors) throws Exception {
         Workbook workbook = WorkbookFactory.create(multipartFile.getInputStream());
         Sheet sheet = workbook.getSheetAt(0);
-        List<T> list = excelUtils.excelSheetToPOJO(sheet, beanClass);
+        List<T> list = excelUtils.excelSheetToPOJO(sheet, beanClass, errors);
         return list;
     }
 }
