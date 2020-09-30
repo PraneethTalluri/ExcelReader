@@ -7,5 +7,7 @@ import java.lang.annotation.RetentionPolicy;
 public @interface ExcelColumn {
     String name();
 
-    String numberFormat() default "General";
+    String numberFormat() default "";
+
+    String dateTimeFormat() default "";
 }
