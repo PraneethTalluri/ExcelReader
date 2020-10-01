@@ -8,11 +8,10 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
+import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
-import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.time.LocalDateTime;
+
 import java.util.*;
 
 @Component
@@ -118,9 +117,10 @@ public class ExcelUtils {
 //                                    instant = formattedDateTime.toInstant(ZoneOffset.UTC);
 //                                }
                                 if (!"".equals(cellValue)) {
-                                    SimpleDateFormat sdf = new SimpleDateFormat(dateTimeFormat);
-                                    Date date = sdf.parse(cellValue);
-                                    f.set(bean, date);
+                                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
+                                    LocalDate localDate = LocalDate.parse(cellValue, dateTimeFormatter);
+                                    Instant instant = localDate.atStartOfDay().toInstant(ZoneOffset.UTC);
+                                    f.set(bean, Date.from(instant));
                                 }
                             } else if (f.getType() == BigDecimal.class && num != null) {
                                 f.set(bean, new BigDecimal(num));
@@ -130,8 +130,6 @@ public class ExcelUtils {
                                     f.set(bean, valueOf.invoke(f.getType(), cellValue));
                                 }
                             }
-                        } catch (ParseException pe) {
-                            errors.add("Failed to parse " + cellValue + " at row number: " + r + " and column number: " + colIdx + " to format " + dateTimeFormat);
                         } catch (Exception e) {
                             errors.add("Failed to convert " + cellValue + " at row number: " + r + " and column number: " + colIdx);
                         }
