@@ -8,10 +8,11 @@ import org.springframework.stereotype.Component;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
-import java.sql.Timestamp;
-import java.time.*;
 import java.time.format.DateTimeFormatter;
 import java.time.temporal.TemporalAccessor;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.time.LocalDateTime;
 import java.util.*;
 
 @Component
@@ -52,19 +53,19 @@ public class ExcelUtils {
                 localDateTime = null;
                 num = null;
                 if (cell.getCellType() == CellType.NUMERIC) {
-                    if (DateUtil.isCellDateFormatted(cell)) { // date
-                        localDateTime = cell.getLocalDateTimeCellValue();
-                    } else { // other numbers
-                        num = cell.getNumericCellValue();
-                    }
+//                    if (DateUtil.isCellDateFormatted(cell)) { // date
+//                        localDateTime = cell.getLocalDateTimeCellValue();
+//                    } else { // other numbers
+                    num = cell.getNumericCellValue();
+//                    }
                 } else if (cell.getCellType() == CellType.FORMULA) {
                     // if formula evaluates to numeric
                     if (evaluator.evaluateFormulaCell(cell) == CellType.NUMERIC) {
-                        if (DateUtil.isCellDateFormatted(cell)) { // date
-                            localDateTime = cell.getLocalDateTimeCellValue();
-                        } else { // other numbers
-                            num = cell.getNumericCellValue();
-                        }
+//                        if (DateUtil.isCellDateFormatted(cell)) { // date
+//                            localDateTime = cell.getLocalDateTimeCellValue();
+//                        } else { // other numbers
+                        num = cell.getNumericCellValue();
+//                        }
                     }
                 }
 
@@ -83,64 +84,54 @@ public class ExcelUtils {
                                 f.set(bean, cellValue);
                             } else if (f.getType() == Double.class && num != null) {
                                 f.set(bean, num);
-                            } else if (f.getType() == LocalDateTime.class) {
-                                if (localDateTime != null)
-                                    f.set(bean, localDateTime);
-                                else if (!"".equals(cellValue)) {
-                                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
-                                    TemporalAccessor parsed = dateTimeFormatter.parseBest(cellValue, LocalDateTime::from, LocalDate::from);
-                                    LocalDateTime formattedDateTime = null;
-                                    if (parsed instanceof LocalDateTime) {
-                                        // it's a LocalDateTime, just assign it
-                                        formattedDateTime = (LocalDateTime) parsed;
-                                    } else if (parsed instanceof LocalDate) {
-                                        // it's a LocalDate,
-                                        formattedDateTime = ((LocalDate) parsed).atTime(LocalTime.MIDNIGHT);
-                                    }
-                                    f.set(bean, formattedDateTime);
-                                }
+//                            } else if (f.getType() == LocalDateTime.class) {
+//                                if (localDateTime != null)
+//                                    f.set(bean, localDateTime);
+//                                else if (!"".equals(cellValue)) {
+//                                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
+//                                    TemporalAccessor parsed = dateTimeFormatter.parseBest(cellValue, LocalDateTime::from, LocalDate::from);
+//                                    LocalDateTime formattedDateTime = null;
+//                                    if (parsed instanceof LocalDateTime) {
+//                                        // it's a LocalDateTime, just assign it
+//                                        formattedDateTime = (LocalDateTime) parsed;
+//                                    } else if (parsed instanceof LocalDate) {
+//                                        // it's a LocalDate,
+//                                        formattedDateTime = ((LocalDate) parsed).atTime(LocalTime.MIDNIGHT);
+//                                    }
+//                                    f.set(bean, formattedDateTime);
+//                                }
                             } else if (f.getType() == Date.class) {
-                                Instant instant = null;
-                                if (localDateTime != null) {
-                                    instant = localDateTime.toInstant(ZoneOffset.UTC);
-                                } else if (!"".equals(cellValue)) {
-                                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
-                                    TemporalAccessor parsed = dateTimeFormatter.parseBest(cellValue, LocalDateTime::from, LocalDate::from);
-                                    LocalDateTime formattedDateTime = null;
-                                    if (parsed instanceof LocalDateTime) {
-                                        // it's a LocalDateTime, just assign it
-                                        formattedDateTime = (LocalDateTime) parsed;
-                                    } else if (parsed instanceof LocalDate) {
-                                        // it's a LocalDate,
-                                        formattedDateTime = ((LocalDate) parsed).atTime(LocalTime.MIDNIGHT);
-                                    }
-                                    instant = formattedDateTime.toInstant(ZoneOffset.UTC);
+//                                Instant instant = null;
+//                                if (localDateTime != null) {
+//                                    instant = localDateTime.toInstant(ZoneOffset.UTC);
+//                                } else if (!"".equals(cellValue)) {
+//                                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
+//                                    TemporalAccessor parsed = dateTimeFormatter.parseBest(cellValue, LocalDateTime::from, LocalDate::from);
+//                                    LocalDateTime formattedDateTime = null;
+//                                    if (parsed instanceof LocalDateTime) {
+//                                        // it's a LocalDateTime, just assign it
+//                                        formattedDateTime = (LocalDateTime) parsed;
+//                                    } else if (parsed instanceof LocalDate) {
+//                                        // it's a LocalDate,
+//                                        formattedDateTime = ((LocalDate) parsed).atTime(LocalTime.MIDNIGHT);
+//                                    }
+//                                    instant = formattedDateTime.toInstant(ZoneOffset.UTC);
+//                                }
+                                if (!"".equals(cellValue)) {
+                                    SimpleDateFormat sdf = new SimpleDateFormat(dateTimeFormat);
+                                    Date date = sdf.parse(cellValue);
+                                    f.set(bean, date);
                                 }
-                                f.set(bean, Date.from(instant));
                             } else if (f.getType() == BigDecimal.class && num != null) {
                                 f.set(bean, new BigDecimal(num));
-                            } else if (f.getType() == Timestamp.class) {
-                                if (localDateTime != null)
-                                    f.set(bean, Timestamp.valueOf(localDateTime));
-                                else if (!"".equals(cellValue)) {
-                                    DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ofPattern(dateTimeFormat);
-                                    TemporalAccessor parsed = dateTimeFormatter.parseBest(cellValue, LocalDateTime::from, LocalDate::from);
-                                    LocalDateTime formattedDateTime = null;
-                                    if (parsed instanceof LocalDateTime) {
-                                        // it's a LocalDateTime, just assign it
-                                        formattedDateTime = (LocalDateTime) parsed;
-                                    } else if (parsed instanceof LocalDate) {
-                                        // it's a LocalDate,
-                                        formattedDateTime = ((LocalDate) parsed).atTime(LocalTime.MIDNIGHT);
-                                    }
-                                    f.set(bean, Timestamp.valueOf(formattedDateTime));
-                                }
                             } else { // this is for all other; Integer, Boolean, ...
                                 if (!"".equals(cellValue)) {
                                     Method valueOf = f.getType().getDeclaredMethod("valueOf", String.class);
                                     f.set(bean, valueOf.invoke(f.getType(), cellValue));
                                 }
                             }
+                        } catch (ParseException pe) {
+                            errors.add("Failed to parse " + cellValue + " at row number: " + r + " and column number: " + colIdx + " to format " + dateTimeFormat);
                         } catch (Exception e) {
                             errors.add("Failed to convert " + cellValue + " at row number: " + r + " and column number: " + colIdx);
                         }
