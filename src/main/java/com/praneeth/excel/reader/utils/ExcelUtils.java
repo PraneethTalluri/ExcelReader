@@ -5,6 +5,8 @@ import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellUtil;
 import org.springframework.stereotype.Component;
 
+import javax.validation.Validation;
+import javax.validation.Validator;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -21,6 +23,7 @@ public class ExcelUtils {
 
         DataFormatter formatter = new DataFormatter(java.util.Locale.US);
         FormulaEvaluator evaluator = sheet.getWorkbook().getCreationHelper().createFormulaEvaluator();
+        Validator validator = Validation.buildDefaultValidatorFactory().getValidator();
 
         int headerRowNum = sheet.getFirstRowNum();
 
@@ -148,6 +151,10 @@ public class ExcelUtils {
                     }
                 }
             }
+            int finalR = r;
+            validator.validate(bean)
+                    .stream()
+                    .forEach(violation -> errors.add("At row " + finalR + ": " + violation.getMessage()));
             result.add(bean);
         }
         return result;
