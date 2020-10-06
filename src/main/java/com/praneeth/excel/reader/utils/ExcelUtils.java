@@ -43,6 +43,18 @@ public class ExcelUtils {
             if (row == null) row = sheet.createRow(r);
             T bean = beanClass.getDeclaredConstructor().newInstance();
 
+            //Set Row Number, if present
+            for (Field f : beanClass.getDeclaredFields()) {
+                if (!f.isAnnotationPresent(ExcelColumn.class)) {
+                    continue;
+                }
+                ExcelColumn ec = f.getAnnotation(ExcelColumn.class);
+                if(ec.name().equalsIgnoreCase("rowNumber")){
+                    f.setAccessible(true);
+                    f.set(bean, row.getRowNum());
+                }
+            }
+
             for (Map.Entry<Integer, String> entry : colHeaders.entrySet()) {
                 int colIdx = entry.getKey();
                 Cell cell = row.getCell(colIdx);
