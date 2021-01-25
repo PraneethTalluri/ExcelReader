@@ -160,7 +160,84 @@ public class ExcelUtils {
         return result;
     }
 
-    public <T> void pojoToExcelSheet(Sheet sheet, List<T> rows) throws Exception {
+    public <T> void appendPojoToExcelSheet(Sheet sheet, List<T> rows) throws Exception {
+
+        DataFormatter formatter = new DataFormatter(java.util.Locale.US);
+        FormulaEvaluator evaluator = sheet.getWorkbook().getCreationHelper().createFormulaEvaluator();
+
+        if (rows.size() > 0) {
+            Row row = null;
+            int r = 0;
+            int c = 0;
+            Map<String, Object> properties = null;
+            DataFormat dataFormat = sheet.getWorkbook().createDataFormat();
+
+            Class beanClass = rows.get(0).getClass();
+
+            // header row
+            int headerRowNum = sheet.getFirstRowNum();
+            r++;
+
+            // collecting the column headers as a Map of header names to column indexes
+            Map<Integer, String> colHeaders = new HashMap<Integer, String>();
+            row = sheet.getRow(headerRowNum);
+            for (Cell eachCell : row) {
+                int colIdx = eachCell.getColumnIndex();
+                String value = formatter.formatCellValue(eachCell, evaluator);
+                colHeaders.put(colIdx, value.replaceAll("\\s", ""));
+                c++;
+            }
+
+            // contents
+            for (T bean : rows) {
+                c = 0;
+                row = sheet.createRow(r++);
+
+                for (Map.Entry<Integer, String> entry : colHeaders.entrySet()) {
+                    int colIdx = entry.getKey();
+                    Cell cell = row.createCell(colIdx);
+
+                    for (Field f : beanClass.getDeclaredFields()) {
+                        if (!f.isAnnotationPresent(ExcelColumn.class)) {
+                            continue;
+                        }
+                        ExcelColumn ec = f.getAnnotation(ExcelColumn.class);
+//                    if (entry.getValue().equals(ec.name())) {
+                        if (entry.getValue().contains(ec.name())) {
+                            // do number formatting the contents
+                            String numberFormat = ec.numberFormat();
+                            properties = new HashMap<String, Object>();
+                            properties.put(CellUtil.DATA_FORMAT, dataFormat.getFormat(numberFormat));
+                            CellUtil.setCellStyleProperties(cell, properties);
+                            f.setAccessible(true);
+                            Object value = f.get(bean);
+                            if (value != null) {
+                                if (value instanceof String) {
+                                    cell.setCellValue((String) value);
+                                } else if (value instanceof Double) {
+                                    cell.setCellValue((Double) value);
+                                } else if (value instanceof Integer) {
+                                    cell.setCellValue((Integer) value);
+                                } else if (value instanceof BigDecimal){
+                                    cell.setCellValue((((BigDecimal) value).longValue()));
+                                } else if (value instanceof  Date){
+                                    LocalDate localDate = ((Date) value).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                                   cell.setCellValue(localDate);
+                                } else if (value instanceof LocalDateTime) {
+                                    cell.setCellValue((LocalDateTime) value);
+                                } else if (value instanceof Boolean) {
+                                    cell.setCellValue((Boolean) value);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    public <T> void pojoToSheet(Sheet sheet, List<T> rows) throws Exception {
         if (rows.size() > 0) {
             Row row = null;
             Cell cell = null;
@@ -210,15 +287,15 @@ public class ExcelUtils {
                     Object value = f.get(bean);
                     if (value != null) {
                         if (value instanceof String) {
-                            cell.setCellValue((String) value);
+                            cell.setCellValue((String)value);
                         } else if (value instanceof Double) {
-                            cell.setCellValue((Double) value);
+                            cell.setCellValue((Double)value);
                         } else if (value instanceof Integer) {
-                            cell.setCellValue((Integer) value);
-                        } else if (value instanceof LocalDateTime) {
-                            cell.setCellValue((LocalDateTime) value);
+                            cell.setCellValue((Integer)value);
+                        } else if (value instanceof java.util.Date) {
+                            cell.setCellValue((java.util.Date)value);
                         } else if (value instanceof Boolean) {
-                            cell.setCellValue((Boolean) value);
+                            cell.setCellValue((Boolean)value);
                         }
                     }
                 }
@@ -230,4 +307,5 @@ public class ExcelUtils {
             }
         }
     }
+
 }

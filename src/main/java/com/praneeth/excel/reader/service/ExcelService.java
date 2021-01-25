@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 
 @Service
-public class UploadService {
+public class ExcelService {
 
     @Autowired
     private ExcelUtils excelUtils;
@@ -85,6 +85,13 @@ public class UploadService {
         Sheet sheet = workbook.getSheetAt(0);
         List<T> list = excelUtils.excelSheetToPOJO(sheet, beanClass, errors);
         return list;
+    }
+
+    public <T> Workbook appendPojoToExcel(MultipartFile multipartFile, List<T> bean) throws Exception {
+        Workbook workbook = WorkbookFactory.create(multipartFile.getInputStream());
+        Sheet sheet = workbook.getSheetAt(0);
+        excelUtils.appendPojoToExcelSheet(sheet, bean);
+        return workbook;
     }
 }
 
