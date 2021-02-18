@@ -3,6 +3,10 @@ package com.praneeth.excel.reader.utils;
 import com.praneeth.excel.reader.annotation.ExcelColumn;
 import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellUtil;
+import org.apache.poi.xssf.usermodel.XSSFCell;
+import org.apache.poi.xssf.usermodel.XSSFRow;
+import org.apache.poi.xssf.usermodel.XSSFSheet;
+import org.apache.poi.xssf.usermodel.XSSFTable;
 import org.springframework.stereotype.Component;
 
 import javax.validation.Validation;
@@ -168,7 +172,6 @@ public class ExcelUtils {
         if (rows.size() > 0) {
             Row row = null;
             int r = 0;
-            int c = 0;
             Map<String, Object> properties = null;
             DataFormat dataFormat = sheet.getWorkbook().createDataFormat();
 
@@ -185,12 +188,10 @@ public class ExcelUtils {
                 int colIdx = eachCell.getColumnIndex();
                 String value = formatter.formatCellValue(eachCell, evaluator);
                 colHeaders.put(colIdx, value.replaceAll("\\s", ""));
-                c++;
             }
 
             // contents
             for (T bean : rows) {
-                c = 0;
                 row = sheet.createRow(r++);
 
                 for (Map.Entry<Integer, String> entry : colHeaders.entrySet()) {
@@ -233,6 +234,100 @@ public class ExcelUtils {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    public <T> void appendPojoToExcelSheetTable(Sheet sheet, List<T> rows) throws Exception {
+        DataFormatter formatter = new DataFormatter(java.util.Locale.US);
+        FormulaEvaluator evaluator = sheet.getWorkbook().getCreationHelper().createFormulaEvaluator();
+
+        if (rows.size() > 0) {
+            Map<String, Object> properties = null;
+            DataFormat dataFormat = sheet.getWorkbook().createDataFormat();
+
+            Class beanClass = rows.get(0).getClass();
+
+            XSSFSheet xssfSheet = (XSSFSheet) sheet;
+
+            List<XSSFTable> tables = xssfSheet.getTables();
+
+            for (XSSFTable t : tables) {
+                int r = 0;
+                XSSFRow row;
+                System.out.println(t.getDisplayName());
+                System.out.println(t.getName());
+                System.out.println(t.getNumberOfMappedColumns());
+
+                int startRow = t.getStartCellReference().getRow();
+                r = startRow+1;
+                int endRow = t.getEndCellReference().getRow();
+                System.out.println("startRow = " + startRow);
+                System.out.println("endRow = " + endRow);
+
+                int startColumn = t.getStartCellReference().getCol();
+                int endColumn = t.getEndCellReference().getCol();
+
+                System.out.println("startColumn = " + startColumn);
+                System.out.println("endColumn = " + endColumn);
+
+                // collecting the column headers as a Map of header names to column indexes
+                Map<Integer, String> colHeaders = new HashMap<Integer, String>();
+                for (int j = startColumn; j <= endColumn; j++) {
+                    XSSFCell cell = xssfSheet.getRow(startRow).getCell(j);
+                    if (cell != null) {
+                        int colIdx = j;
+                        String columnName = cell.getStringCellValue();
+                        colHeaders.put(colIdx, columnName.replaceAll("\\s", ""));
+                    }
+                }
+
+                // contents
+                for (T bean : rows) {
+                    row = xssfSheet.createRow(r++);
+
+                    for (Map.Entry<Integer, String> entry : colHeaders.entrySet()) {
+                        int colIdx = entry.getKey();
+                        XSSFCell xssfCell = row.createCell(colIdx);
+
+                        for (Field f : beanClass.getDeclaredFields()) {
+                            if (!f.isAnnotationPresent(ExcelColumn.class)) {
+                                continue;
+                            }
+                            ExcelColumn ec = f.getAnnotation(ExcelColumn.class);
+//                    if (entry.getValue().equals(ec.name())) {
+                            if (entry.getValue().contains(ec.name())) {
+                                // do number formatting the contents
+                                String numberFormat = ec.numberFormat();
+                                properties = new HashMap<String, Object>();
+                                properties.put(CellUtil.DATA_FORMAT, dataFormat.getFormat(numberFormat));
+                                CellUtil.setCellStyleProperties(xssfCell, properties);
+                                f.setAccessible(true);
+                                Object value = f.get(bean);
+                                if (value != null) {
+                                    if (value instanceof String) {
+                                        xssfCell.setCellValue((String) value);
+                                    } else if (value instanceof Double) {
+                                        xssfCell.setCellValue((Double) value);
+                                    } else if (value instanceof Integer) {
+                                        xssfCell.setCellValue((Integer) value);
+                                    } else if (value instanceof BigDecimal){
+                                        xssfCell.setCellValue((((BigDecimal) value).longValue()));
+                                    } else if (value instanceof  Date){
+                                        LocalDate localDate = ((Date) value).toInstant().atZone(ZoneId.systemDefault()).toLocalDate();
+                                        xssfCell.setCellValue(localDate);
+                                    } else if (value instanceof LocalDateTime) {
+                                        xssfCell.setCellValue((LocalDateTime) value);
+                                    } else if (value instanceof Boolean) {
+                                        xssfCell.setCellValue((Boolean) value);
+                                    }
+                                }
+                                break;
+                            }
+                        }
+                    }
+                }
+
             }
         }
     }

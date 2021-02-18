@@ -90,7 +90,8 @@ public class ExcelService {
     public <T> Workbook appendPojoToExcel(MultipartFile multipartFile, List<T> bean) throws Exception {
         Workbook workbook = WorkbookFactory.create(multipartFile.getInputStream());
         Sheet sheet = workbook.getSheetAt(0);
-        excelUtils.appendPojoToExcelSheet(sheet, bean);
+        //excelUtils.appendPojoToExcelSheet(sheet, bean);
+        excelUtils.appendPojoToExcelSheetTable(sheet, bean);
         return workbook;
     }
 }
