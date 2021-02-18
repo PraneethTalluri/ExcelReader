@@ -282,6 +282,9 @@ public class ExcelUtils {
                     }
                 }
 
+                //set row count in table
+                t.setDataRowCount(rows.size());
+
                 // contents
                 for (T bean : rows) {
                     row = xssfSheet.createRow(r++);
